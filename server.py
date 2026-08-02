@@ -13,7 +13,8 @@ app = FastAPI(
 add_routes(
     app,
     agent_with_history,
-    path="/antiliso"
+    path="/antiliso",
+    config_keys=["configurable"]
 )
 
 if __name__ == "__main__":

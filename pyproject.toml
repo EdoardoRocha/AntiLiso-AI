@@ -4,21 +4,4 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = [
-    "dotenv",
-    "fastapi>=0.141.1",
-    "langchain",
-    "langchain-community>=0.4.2",
-    "langchain-mongodb>=0.11.0",
-    "langchain-openai>=1.4.1",
-    "langgraph",
-    "langgraph-checkpoint-mongodb>=0.4.0",
-    "langgraph-cli[inmem]",
-    "langserve[all]>=0.3.3",
-    "motor>=3.7.1",
-    "pydantic>=2.13.4",
-    "pymongo>=4.16.0",
-    "python-dotenv",
-    "tavily-python",
-    "uvicorn>=0.52.0",
-]
+dependencies = []
