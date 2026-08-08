@@ -46,7 +46,7 @@ async def buscar_transacoes(user_id: PydanticObjectId):
     Use para quando precisar checar as transações que foram feitas anteriormente e quando o usuário
     pedir para ver.
     :param user_id: ID para ver somente as transações do usuário atual.
-    :return: Lista com as transações encontradas no banco de dados.
+    :return: Lista com as transações encontradas no banco de dados ou mensagem informando a ausência de transações.
     """
     try:
         if not (result := await Transaction.find(Transaction.user_id == user_id).to_list()):
