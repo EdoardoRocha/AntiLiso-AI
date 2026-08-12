@@ -1,7 +1,49 @@
 from beanie import PydanticObjectId
 from langchain.tools import tool
+from config.database import MONGO_URL
 from models.transactions_model import Transaction
-from fastapi import HTTPException
+from bson import ObjectId
+import json
+from pymongo import AsyncMongoClient
+import os
+
+
+@tool
+async def executar_agregacao_mongo(pipeline_json: str, user_id: str) -> str:
+    """
+    Executa um pipeline de agregação no MongoDB na coleção 'transactions'.
+    :param pipeline_json: String no formato JSON representando uma lista de estágios do MongoDB pipeline.
+                       Exemplo: '[{"$match": {"type": "expense"}}, {"$group": {"_id": "$category", "total": {"$sum": "$amount"}}}]'
+           user_id: ID do usuário que está conversando.
+    :return: String no formato JSON com os registros no MongoDB pipeline.
+    """
+
+    try:
+        client = AsyncMongoClient(MONGO_URL)
+        db = client["antiliso"]
+        collection = db["transactions"]
+
+        pipeline = json.loads(pipeline_json)
+
+        user_object_id = ObjectId(user_id)
+
+        pipeline.insert(0, {
+            "$match": {"user_id": user_object_id}
+        })
+
+        cursor = await collection.aggregate(pipeline)
+        results = await cursor.to_list(length=100)
+
+        for doc in results:
+            if "_id" in doc:
+                doc["_id"] = str(doc["_id"])
+            if "user_id" in doc:
+                doc["user_id"] = str(doc["user_id"])
+        await client.close()
+        return json.dumps(results, ensure_ascii=False)
+
+    except Exception as error:
+        return f"Erro ao executar a agregação no banco de dados. {str(repr(error))}"
 
 
 @tool

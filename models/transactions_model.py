@@ -1,5 +1,6 @@
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from datetime import datetime
 
 
 # class Category(BaseModel):
@@ -26,7 +27,7 @@ class Transaction(Document):
     type: str
     category: str
     description: str
-    date: str
+    date: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:
         name = "transactions"
