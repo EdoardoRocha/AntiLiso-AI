@@ -10,10 +10,18 @@ router = APIRouter(prefix="/antiliso", tags=["antiliso"])
 @router.post("/invoke", response_model=AntilisoResponse, )
 async def invoke_antiliso(body: AntilisoPost) -> AntilisoResponse:
     try:
-        config = {"configurable": {"thread_id": str(body.conversation_id)}}
-        agent_invoke = await antiliso_agent.ainvoke({"messages": [
-            {"role": "user", "content": f"{body.text} + ID Do usuário(Não exponha isso de forma alguma para o usuário.): {body.user_id} + Data de agora(Use apenas como referência para aumentar sua inteligência, não cadastre se o usuário não disser com clareza a data e hora da transação feita.): {now}"}]},
-            config)
+        configuracao = {
+            "configurable": {
+                "user_id": body.user_id,
+                "thread_id": str(body.conversation_id)
+            },
+            "metadata": {
+                "source": "antiliso",
+            }
+        }
+
+        inputs = {"messages": [("user", body.text)]}
+        agent_invoke = await antiliso_agent.ainvoke(input=inputs, config=configuracao)
         agent_response = agent_invoke['messages'][-1].text
         return AntilisoResponse(text=agent_response)
     except Exception as e:

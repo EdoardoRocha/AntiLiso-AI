@@ -2,6 +2,7 @@ from beanie import PydanticObjectId
 from langchain.tools import tool
 from config.database import MONGO_URL
 from models.transactions_model import Transaction
+from langchain_core.runnables import RunnableConfig
 from bson import ObjectId
 import json
 from pymongo import AsyncMongoClient
@@ -9,23 +10,24 @@ import os
 
 
 @tool
-async def executar_agregacao_mongo(pipeline_json: str, user_id: str) -> str:
+async def executar_agregacao_mongo(pipeline_json: str, config: RunnableConfig) -> str:
     """
     Executa um pipeline de agregação no MongoDB na coleção 'transactions'.
     :param pipeline_json: String no formato JSON representando uma lista de estágios do MongoDB pipeline.
-                       Exemplo: '[{"$match": {"type": "expense"}}, {"$group": {"_id": "$category", "total": {"$sum": "$amount"}}}]'
-           user_id: ID do usuário que está conversando.
+                          Exemplo: '[{"$match": {"type": "expense"}}, {"$group": {"_id": "$category", "total": {"$sum": "$amount"}}}]'
     :return: String no formato JSON com os registros no MongoDB pipeline.
     """
 
     try:
+        user_id_str = config.get("configurable", {}).get("user_id")
+
         client = AsyncMongoClient(MONGO_URL)
         db = client["antiliso"]
         collection = db["transactions"]
 
         pipeline = json.loads(pipeline_json)
 
-        user_object_id = ObjectId(user_id)
+        user_object_id = ObjectId(user_id_str)
 
         pipeline.insert(0, {
             "$match": {"user_id": user_object_id}
@@ -47,24 +49,25 @@ async def executar_agregacao_mongo(pipeline_json: str, user_id: str) -> str:
 
 
 @tool
-async def inserir_transacao(user_id: PydanticObjectId,
-                            amount: float,
+async def inserir_transacao(amount: float,
                             type: str,
                             category: str,
                             description: str,
-                            date: str):
+                            date: str,
+                            config: RunnableConfig):
     """
     Função responsável por inserir uma transação no banco de dados.
     Use quando o usuário falar que fez alguma transação.
-    :param user_id: ID do usuário que fez a transação
-    :param amount: Valor total da transação
-    :param type: Tipo da transação. Só pode ser: "SPENT or GAIN"
-    :param category: Categorya da transaçõo: Salário, comida, conta de luz...
+    :param amount: Valor numérico total da transação
+    :param type: Tipo da transação. Só pode ser: "SPENT" ou "GAIN"
+    :param category: Categoria da transação: Salário, Alimentação, Transporte, etc.
     :param description: Uma breve descrição daquela transação
     :param date: A data da transação
     :return: Uma mensagem avisando o sucesso ou a falha da persistência no banco de dados.
     """
     try:
+        user_id_str = config.get("configurable", {}).get("user_id")
+        user_id = PydanticObjectId(user_id_str)
         nova_transaction = Transaction(
             user_id=user_id,
             amount=amount,
@@ -82,16 +85,17 @@ async def inserir_transacao(user_id: PydanticObjectId,
 
 
 @tool
-async def buscar_transacoes(user_id: PydanticObjectId):
+async def buscar_transacoes(config: RunnableConfig):
     """
-    Função que busca todas as transações do usuário registradas no banco.
-    Use para quando precisar checar as transações que foram feitas anteriormente e quando o usuário
-    pedir para ver.
-    :param user_id: ID para ver somente as transações do usuário atual.
+    Função que busca todas as transações registradas no banco.
+    Use para quando precisar checar as transações que foram feitas anteriormente
+    e quando o usuário pedir para ver o seu histórico.
     :return: Lista com as transações encontradas no banco de dados ou mensagem informando a ausência de transações.
     """
     try:
-        if not (result := await Transaction.find(Transaction.user_id == user_id).to_list()):
+        user_id_str = config.get("configurable", {}).get("user_id")
+        user_id_obj = PydanticObjectId(user_id_str)
+        if not (result := await Transaction.find(Transaction.user_id == user_id_obj).to_list()):
             return f"Não existe nenhuma transação cadastrada associada ao usuário. Avise-o de forma amigável que ele não possui transações cadastradas."
         return result
 
