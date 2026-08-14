@@ -40,6 +40,7 @@ class AntilisoPost(BaseModel):
     user_id: PydanticObjectId
     conversation_id: PydanticObjectId
     text: str
+    img_url: str | None = None
 
 class AntilisoResponse(BaseModel):
     text: str
