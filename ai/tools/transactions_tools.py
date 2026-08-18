@@ -7,6 +7,24 @@ from bson import ObjectId
 import json
 from pymongo import AsyncMongoClient
 import os
+from datetime import datetime
+
+
+def converter_datas_pipeline(estagio):
+    if isinstance(estagio, dict):
+        for chave, valor in estagio.items():
+            if chave == "date" and isinstance(valor, dict):
+                for operador, data_str in valor.items():
+                    if isinstance(data_str, str):
+                        try:
+                            valor[operador] = datetime.strptime(data_str.split("T")[0], "%Y-%m-%d")
+                        except ValueError:
+                            pass
+            else:
+                converter_datas_pipeline(valor)
+    elif isinstance(estagio, list):
+        for item in estagio:
+            converter_datas_pipeline(item)
 
 
 @tool
@@ -27,6 +45,9 @@ async def executar_agregacao_mongo(pipeline_json: str, config: RunnableConfig) -
 
         pipeline = json.loads(pipeline_json)
 
+        for stage in pipeline:
+            converter_datas_pipeline(stage)
+
         user_object_id = ObjectId(user_id_str)
 
         pipeline.insert(0, {
@@ -41,6 +62,8 @@ async def executar_agregacao_mongo(pipeline_json: str, config: RunnableConfig) -
                 doc["_id"] = str(doc["_id"])
             if "user_id" in doc:
                 doc["user_id"] = str(doc["user_id"])
+            if "date" in doc:
+                doc["date"] = doc["date"].isoformat()
         await client.close()
         return json.dumps(results, ensure_ascii=False)
 

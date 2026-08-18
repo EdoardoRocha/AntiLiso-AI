@@ -1,11 +1,11 @@
 from fastapi import APIRouter
 from models.transactions_model import AntilisoPost, AntilisoResponse
 from ai.agent import antiliso_agent
-from datetime import date
+from datetime import datetime
 from langchain_core.messages import HumanMessage
 from helpers.image_encode import image_to_base64
 
-today = date.today()
+now = datetime.now()
 router = APIRouter(prefix="/antiliso", tags=["antiliso"])
 
 
@@ -24,7 +24,7 @@ async def invoke_antiliso(body: AntilisoPost) -> AntilisoResponse:
 
         user_content = []
         if body.text:
-            user_content.append({"type": "text", "text": f"Mensagem do usuário: {body.text}. data de hoje(Apenas para referência): {today}"})
+            user_content.append({"type": "text", "text": f"Mensagem do usuário: {body.text}. Data de agora(Use apenas como referência para aumentar sua inteligência, não cadastre se o usuário não disser com clareza a data e hora da transação feita.): {now}"})
         img_url = getattr(body, "img_url", None)
         if img_url and img_url != "http://localhost:3000/":
             image_data, mime_type = await image_to_base64(img_url)
