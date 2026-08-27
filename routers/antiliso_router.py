@@ -15,7 +15,7 @@ async def invoke_antiliso(body: AntilisoPost) -> AntilisoResponse:
         configuracao = {
             "configurable": {
                 "user_id": body.user_id,
-                "thread_id": str(body.conversation_id)
+                "thread_id": str(body.phoneNumber)
             },
             "metadata": {
                 "source": "antiliso",
