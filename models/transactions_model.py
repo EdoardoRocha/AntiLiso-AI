@@ -38,7 +38,7 @@ class Transaction(Document):
 # ================================================
 class AntilisoPost(BaseModel):
     user_id: PydanticObjectId
-    conversation_id: PydanticObjectId
+    phoneNumber: int
     text: str
     img_url: str | None = None
 
